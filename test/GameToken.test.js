@@ -35,7 +35,7 @@ contract('Game Token', (accounts) => {
     let result
 
     it('mints tokens', async () => {
-      // just a random url it can be anything...
+      // mint a token for the first account
       await token.safeMint(accounts[0])
 
       // It should increase the total supply

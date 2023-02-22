@@ -5,29 +5,53 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract GameToken is ERC721Enumerable, Pausable, Ownable {
+contract GameToken is ERC721, ERC721Enumerable, Pausable, AccessControl {
    
-    using Counters for Counters.Counter;
+       using Counters for Counters.Counter;
 
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     Counters.Counter private _tokenIdCounter;
 
-    constructor() ERC721("Game Token", "GAME") public onlyOwner{}
+    constructor() ERC721("Game Token", "GAME") {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, msg.sender);
+    }
 
-    function safeMint(address to) public onlyOwner {
+    function pause() public onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
+    function safeMint(address to) public onlyRole(MINTER_ROLE) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
-    }    
-
-    function getTokenIdByIndex(uint256 index) public view returns (uint256) {
-        require(index < totalSupply(), "Invalid token index!!!");
-        return tokenByIndex(index);
     }
 
-    function getTokenIdByOwner(address owner, uint256 index) public view returns (uint256) {
-        require(index < balanceOf(owner), "Invalid token index");
-        return tokenOfOwnerByIndex(owner, index);
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
+        internal
+        whenNotPaused
+        override(ERC721, ERC721Enumerable)
+    {
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    }
+
+    // The following functions are overrides required by Solidity.
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable, AccessControl)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 
     function getOwnerByIndex(uint256 index) public view returns (address) {
@@ -35,21 +59,15 @@ contract GameToken is ERC721Enumerable, Pausable, Ownable {
         uint256 tokenId = tokenByIndex(index);
         return ownerOf(tokenId);
     }
-
-        function pause() public onlyOwner {
-        _pause();
+    
+    function getTokenIdByOwner(address owner, uint256 index) public view returns (uint256) {
+        require(index < balanceOf(owner), "Invalid token index");
+        return tokenOfOwnerByIndex(owner, index);
     }
 
-    function unpause() public onlyOwner {
-        _unpause();
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
-        internal
-        whenNotPaused
-        override
-    {
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    function getTokenIdByIndex(uint256 index) public view returns (uint256) {
+        require(index < totalSupply(), "Invalid token index");
+        return tokenByIndex(index);
     }
 
 }
