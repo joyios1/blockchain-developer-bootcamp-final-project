@@ -60,10 +60,6 @@ contract('Game Token', (accounts) => {
       }
       let expected = ['0']
       assert.equal(tokenIds.toString(), expected.toString(), 'tokenIds are correct')
-
-      // // Token URI Correct
-      // let tokenURI = await token.tokenURI('1')
-      // assert.equal(tokenURI, 'https://www.gametoken.com/nft')
     })
   })
 

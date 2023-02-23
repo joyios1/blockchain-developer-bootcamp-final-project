@@ -55,14 +55,15 @@ function createImage(givenPath, givenName){
 }
 
 async function mintToken(givenPath, index) {
-	let hasMinted = token.methods.mint(
-		accountAddress,
-		window.location.origin + givenPath
+	let hasMinted = token.methods.safeMint(
+		accountAddress
 	)
-		.send({ from: accountAddress })
-		.on('transactionHash', (hash) => {
-			tokenURIs.push(givenPath)
-		})
+
+	.send({ from: accountAddress })
+	.on('transactionHash', (hash) => {
+		tokenURIs.push(givenPath)
+		console.log("the path was added")
+	})
 
 	hasMinted.then(value => {
 		createImage(tokenURIs[index-1], 'orc' + (index).toString())
@@ -92,9 +93,9 @@ async function loadBlockchainData() {
 	// Load smart contract
 	const networkId = await web3.eth.net.getId()
 	const networkData = GameToken.networks[networkId]
-	if (networkData) {
 
-		abi = GameToken.abi
+	if (networkData) {
+		const abi = GameToken.abi
 		contractAddress = networkData.address
 		token = new web3.eth.Contract(abi, contractAddress)
 		totalSupply = await token.methods.totalSupply().call()
@@ -105,8 +106,11 @@ async function loadBlockchainData() {
 
 		for (let i = 0; i < balanceOf; i++) {
 			let id = await token.methods.tokenOfOwnerByIndex(accountAddress, i).call()
-			let tokenURI = await token.methods.tokenURI(id).call()
-			tokenURIs.push(tokenURI)
+			// let tokenURI = await token.methods.tokenURI(id).call()
+			if(i == 0)
+				tokenURIs.push(NFTs.orc2)
+			else if(i == 1)
+				tokenURIs.push(NFTs.orc3)
 		}
 
 		createImage(NFTs.orc1, 'orc0')
@@ -144,6 +148,8 @@ let money = 100
 const explosions = []
 
 function animate(){
+	console.log(tokenURIs.length)
+
 	const animationFrameId = requestAnimationFrame(animate)
 	c.drawImage(image, 0, 0)
 	
