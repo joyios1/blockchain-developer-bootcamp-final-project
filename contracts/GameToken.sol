@@ -70,4 +70,25 @@ contract GameToken is ERC721, ERC721Enumerable, Pausable, AccessControl {
         return tokenByIndex(index);
     }
 
+    mapping (address => mapping(uint256 => bool)) private heldNFTs;
+
+    function deposit(address nftContractAddress, uint256 tokenId) public {
+        IERC721 nftContract = IERC721(nftContractAddress);
+        require(nftContract.ownerOf(tokenId) == msg.sender, "Not owner of NFT");
+        nftContract.transferFrom(msg.sender, address(this), tokenId);
+        heldNFTs[nftContractAddress][tokenId] = true;
+    }
+    
+    function withdraw(address nftContractAddress, uint256 tokenId) public {
+        IERC721 nftContract = IERC721(nftContractAddress);
+        require(heldNFTs[nftContract][tokenId], "NFT not held by contract");
+        heldNFTs[nftContract][tokenId] = false;
+        nftContract.transferFrom(address(this), msg.sender, tokenId);
+    }
+    
+    function isHeld(address nftContractAddress, uint256 tokenId) public view returns (bool) {
+        IERC721 nftContract = IERC721(nftContractAddress);
+        return heldNFTs[nftContract][tokenId];
+    }
+
 }
